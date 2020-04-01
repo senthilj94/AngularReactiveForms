@@ -9,6 +9,9 @@ import {
   FormArray
 } from '@angular/forms';
 import { CustomValidator } from '../../../shared/shared/custom-validator';
+import { ActivatedRoute } from '@angular/router';
+import { EmployeeService } from 'src/app/services/employee.service';
+import { IEmployee } from 'src/app/models/IEmployee';
 
 @Component({
   selector: 'app-create-employees',
@@ -50,7 +53,7 @@ export class CreateEmployeesComponent implements OnInit {
     }
   };
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private route: ActivatedRoute, private employeeService: EmployeeService) {}
 
   ngOnInit(): void {
     // this.employeeFormGroup = new FormGroup({
@@ -62,6 +65,13 @@ export class CreateEmployeesComponent implements OnInit {
     //     proficiency: new FormControl()
     //   })
     // });
+
+    this.route.paramMap.subscribe(params => {
+      const empId = +params.get('id');
+      if (empId) {
+        this.getEmployee(empId);
+      }
+    });
 
     this.employeeFormGroup = this.fb.group(
       {
@@ -81,6 +91,14 @@ export class CreateEmployeesComponent implements OnInit {
     this.employeeFormGroup.valueChanges.subscribe(value => {
       this.logValidationErrors(this.employeeFormGroup);
     });
+  }
+
+  getEmployee(id: number) {
+    this.employeeService.getEmployee(id)
+      .subscribe(
+        (employee: IEmployee) => this.editEmployee(employee),
+        (err: any) => console.log(err)
+      );
   }
 
   addSkillsFormGroup(): (FormGroup) {
@@ -168,5 +186,17 @@ export class CreateEmployeesComponent implements OnInit {
 
   getControls() {
     return (this.employeeFormGroup.get('skills') as FormArray).controls;
+  }
+
+  editEmployee(employee: IEmployee) {
+    this.employeeFormGroup.patchValue({
+      fullName: employee.fullName,
+      contactPreference: employee.contactPreference,
+      emailGroup: {
+        email: employee.email,
+        confirmEmail: employee.email
+      },
+      phone: employee.phone
+    });
   }
 }
